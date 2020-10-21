@@ -3,6 +3,7 @@ package statuses;
 import basic.RestUtilities;
 import constants.EndPoints;
 import constants.Path;
+import io.restassured.path.json.JsonPath;
 import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
 import io.restassured.specification.ResponseSpecification;
@@ -10,7 +11,6 @@ import org.testng.Assert;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
-import java.util.ArrayList;
 
 import static io.restassured.RestAssured.given;
 
@@ -23,7 +23,6 @@ public class TwitterWorkflowTest {
     @BeforeClass
     public void setup() {
         reqSpec = RestUtilities.getRequestSpecification();
-        // reqSpec.queryParam("user_id", "apiautomation");
         reqSpec.basePath(Path.STATUSES);
 
         resSpec = RestUtilities.getResponseSpecification();
@@ -32,7 +31,6 @@ public class TwitterWorkflowTest {
     @Test
     public void postTweets() {
         Response response =
-
                 given()
                         .spec(RestUtilities.createQueryParam(reqSpec, "status", "My First Tweet"))
                         .when()
@@ -43,18 +41,20 @@ public class TwitterWorkflowTest {
                         .extract()
                         .response();
 
-        tweetId = response.path("id_str");
+        //tweetId = response.path("id_str");
+
+        JsonPath jsonPath=RestUtilities.getJsonPath(response);
+        tweetId = jsonPath.get("id_str");
         System.out.println("The response.path: " + tweetId);
     }
 
     @Test(dependsOnMethods = {"postTweets"})
     public void readTweet() {
-
         RestUtilities.setEndPoint(EndPoints.STATUSES_TWEET_READ_SINGLE);
         Response res = RestUtilities.getResponse(
                 RestUtilities.createQueryParam(reqSpec, "id", tweetId), "get");
 
-        ArrayList<String> text = res.path("text");
+        String text = res.path("text");
         System.out.println("Read Tweets Method");
         Assert.assertTrue(text.contains("My First Tweet"));
     }
